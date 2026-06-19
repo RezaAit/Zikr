@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>তাজবীহ কাউন্টার</title>
+<meta name="description" content="ডিজিটাল তাজবীহ কাউন্টার — যিকির গণনা, স্ট্রিক, পরিসংখ্যান ও ৫০+ প্রিসেট যিকির।">
+
+<!-- PWA -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0e1a16">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="তাজবীহ">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="icons/icon-512.png">
+
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <div class="app">
+
+    <header class="topbar">
+      <button class="icon-btn" id="historyBtn" aria-label="ইতিহাস">
+        <svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></svg>
+      </button>
+      <h1>তাজবীহ কাউন্টার</h1>
+      <div class="topbar-right">
+        <button class="icon-btn" id="statsBtn" aria-label="পরিসংখ্যান">
+          <svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 16v-5"/><path d="M12 16V8"/><path d="M17 16v-3"/></svg>
+        </button>
+        <button class="icon-btn" id="settingsBtn" aria-label="সেটিংস">
+          <svg viewBox="0 0 24 24"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <div class="streak-bar" id="streakBar">
+      <span class="streak-flame">
+        <svg viewBox="0 0 24 24"><path d="M12 2c1 3-2 4-2 7a4 4 0 0 0 8 0c0-1-.5-2-1-3 2 1 3 3 3 6a6 6 0 0 1-12 0c0-4 2-6 4-10Z"/></svg>
+      </span>
+      <span id="streakText">০ দিনের স্ট্রিক</span>
+      <span class="streak-divider">•</span>
+      <span id="dailyGoalText">আজ: ০ / ১০০</span>
+    </div>
+
+    <main class="counter-area">
+
+      <div class="dhikr-select" id="dhikrSelect">
+        <button class="dhikr-chip active" data-name="সুবহানাল্লাহ" data-target="33">সুবহানাল্লাহ</button>
+        <button class="dhikr-chip" data-name="আলহামদুলিল্লাহ" data-target="33">আলহামদুলিল্লাহ</button>
+        <button class="dhikr-chip" data-name="আল্লাহু আকবার" data-target="34">আল্লাহু আকবার</button>
+        <button class="dhikr-chip" data-name="আস্তাগফিরুল্লাহ" data-target="100">আস্তাগফিরুল্লাহ</button>
+        <button class="dhikr-chip" data-name="মুক্ত গণনা" data-target="0" id="freeChip">মুক্ত গণনা</button>
+        <button class="dhikr-chip custom" data-name="" data-target="0" id="pickerChip">+ আরও যিকির</button>
+      </div>
+
+      <div class="ring-wrap">
+        <svg class="progress-ring" viewBox="0 0 240 240">
+          <circle class="ring-track" cx="120" cy="120" r="108"></circle>
+          <circle class="ring-fill" id="ringFill" cx="120" cy="120" r="108"></circle>
+        </svg>
+        <svg class="milestone-dots" id="milestoneDots" viewBox="0 0 240 240"></svg>
+
+        <button class="tap-zone" id="tapZone" aria-label="গণনা করুন">
+          <span class="round-label" id="roundLabel">রাউন্ড ১</span>
+          <span class="count" id="countDisplay">০</span>
+          <span class="target-label" id="targetLabel">লক্ষ্য: ৩৩</span>
+        </button>
+
+        <div class="celebrate-burst" id="celebrateBurst"></div>
+      </div>
+
+      <p class="active-dhikr" id="activeDhikrName">সুবহানাল্লাহ</p>
+
+      <div class="controls">
+        <button class="ctrl-btn" id="undoBtn" aria-label="পূর্বের গণনা বাতিল">
+          <svg viewBox="0 0 24 24"><path d="M3 7v6h6"/><path d="M3.51 13a9 9 0 1 0 2.13-9.36L3 7"/></svg>
+        </button>
+        <button class="ctrl-btn reset" id="resetBtn" aria-label="রিসেট">
+          <svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 2.64-6.36L3 8"/><path d="M3 3v5h5"/></svg>
+        </button>
+        <button class="ctrl-btn" id="vibrateBtn" aria-label="কম্পন চালু/বন্ধ">
+          <svg viewBox="0 0 24 24"><path d="M8 4v16"/><path d="M16 4v16"/><path d="M4 9v6"/><path d="M20 9v6"/></svg>
+        </button>
+      </div>
+
+      <p class="total-line">আজকের মোট: <span id="todayTotal">০</span> &nbsp;•&nbsp; সর্বমোট: <span id="grandTotal">০</span></p>
+
+      <div class="milestone-toast" id="milestoneToast"></div>
+
+    </main>
+
+  </div>
+
+  <div class="sheet-backdrop" id="sheetBackdrop"></div>
+
+  <div class="sheet" id="historySheet">
+    <div class="sheet-handle"></div>
+    <h2>ইতিহাস</h2>
+    <div class="history-list" id="historyList"></div>
+    <button class="text-btn danger" id="clearHistoryBtn">ইতিহাস মুছে ফেলুন</button>
+  </div>
+
+  <div class="sheet" id="statsSheet">
+    <div class="sheet-handle"></div>
+    <h2>পরিসংখ্যান</h2>
+
+    <div class="stat-cards">
+      <div class="stat-card">
+        <p class="stat-num" id="statStreak">০</p>
+        <p class="stat-label">দিনের স্ট্রিক</p>
+      </div>
+      <div class="stat-card">
+        <p class="stat-num" id="statWeekTotal">০</p>
+        <p class="stat-label">এই সপ্তাহে</p>
+      </div>
+      <div class="stat-card">
+        <p class="stat-num" id="statBestDay">০</p>
+        <p class="stat-label">সর্বোচ্চ দিন</p>
+      </div>
+      <div class="stat-card">
+        <p class="stat-num" id="statAvgDay">০</p>
+        <p class="stat-label">দৈনিক গড়</p>
+      </div>
+    </div>
+
+    <p class="chart-heading">গত ৭ দিন</p>
+    <div class="week-chart" id="weekChart"></div>
+  </div>
+
+  <div class="sheet sheet-tall" id="pickerSheet">
+    <div class="sheet-handle"></div>
+    <h2>যিকির বাছাই করুন</h2>
+
+    <div class="picker-tabs">
+      <button class="picker-tab active" data-tab="list">তালিকা</button>
+      <button class="picker-tab" data-tab="custom">নিজস্ব লিখুন</button>
+    </div>
+
+    <div class="picker-pane" id="pickerPaneList">
+      <div class="search-box">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+        <input type="text" id="zikirSearchInput" placeholder="যিকির খুঁজুন...">
+      </div>
+      <div class="zikir-results" id="zikirResults"></div>
+    </div>
+
+    <div class="picker-pane" id="pickerPaneCustom" style="display:none;">
+      <div class="form-row">
+        <label class="form-label" for="customNameInput">যিকিরের নাম</label>
+        <input type="text" id="customNameInput" class="text-input" placeholder="যেমন: ইয়া রাহমান" maxlength="80">
+      </div>
+
+      <div class="form-row">
+        <label class="form-label" for="customTargetInputModal">লক্ষ্যসংখ্যা</label>
+        <input type="number" id="customTargetInputModal" class="text-input" value="100" min="0" max="9999">
+        <p class="setting-sub">০ দিলে এটি মুক্ত গণনা (কোনো লক্ষ্য ছাড়া) হবে</p>
+      </div>
+
+      <button class="text-btn primary" id="customSaveBtn">শুরু করুন</button>
+    </div>
+  </div>
+
+  <div class="sheet" id="settingsSheet">
+    <div class="sheet-handle"></div>
+    <h2>সেটিংস</h2>
+
+    <div class="setting-row">
+      <div>
+        <p class="setting-title">কম্পন প্রতিক্রিয়া</p>
+        <p class="setting-sub">প্রতিটি গণনায় কম্পন</p>
+      </div>
+      <label class="switch">
+        <input type="checkbox" id="vibrateToggle" checked>
+        <span class="slider"></span>
+      </label>
+    </div>
+
+    <div class="setting-row">
+      <div>
+        <p class="setting-title">শব্দ প্রতিক্রিয়া</p>
+        <p class="setting-sub">প্রতিটি গণনায় শব্দ বাজবে</p>
+      </div>
+      <label class="switch">
+        <input type="checkbox" id="soundToggle">
+        <span class="slider"></span>
+      </label>
+    </div>
+
+    <div class="sound-style-row" id="soundStyleRow">
+      <p class="form-label">শব্দের ধরন</p>
+      <div class="sound-style-grid">
+        <button class="sound-chip active" data-sound="drop">
+          <svg viewBox="0 0 24 24"><path d="M12 2c3 5 7 9.5 7 13.5a7 7 0 0 1-14 0C5 11.5 9 7 12 2Z"/></svg>
+          পানির ফোঁটা
+        </button>
+        <button class="sound-chip" data-sound="wood">
+          <svg viewBox="0 0 24 24"><rect x="4" y="9" width="16" height="6" rx="1"/><path d="M8 9V6a4 4 0 0 1 8 0v3"/></svg>
+          কাঠের টাক
+        </button>
+        <button class="sound-chip" data-sound="bell">
+          <svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
+          ঘণ্টা
+        </button>
+        <button class="sound-chip" data-sound="click">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="2"/></svg>
+          ক্লিক
+        </button>
+      </div>
+    </div>
+
+    <div class="setting-row">
+      <div>
+        <p class="setting-title">লক্ষ্যে স্বয়ংক্রিয় রাউন্ড</p>
+        <p class="setting-sub">লক্ষ্যে পৌঁছালে নতুন রাউন্ড শুরু হবে</p>
+      </div>
+      <label class="switch">
+        <input type="checkbox" id="autoRoundToggle" checked>
+        <span class="slider"></span>
+      </label>
+    </div>
+
+    <div class="setting-row">
+      <div>
+        <p class="setting-title">মাইলফলক উদযাপন</p>
+        <p class="setting-sub">২৫%, ৫০%, ৭৫%, ১০০%-এ অ্যানিমেশন</p>
+      </div>
+      <label class="switch">
+        <input type="checkbox" id="celebrateToggle" checked>
+        <span class="slider"></span>
+      </label>
+    </div>
+
+    <div class="form-row daily-goal-row">
+      <label class="form-label" for="dailyGoalInput">দৈনিক লক্ষ্য</label>
+      <input type="number" id="dailyGoalInput" class="text-input" value="100" min="1" max="99999">
+      <p class="setting-sub">প্রতিদিন এই সংখ্যক জিকির পূর্ণ করলে স্ট্রিক বাড়বে</p>
+    </div>
+
+    <p class="form-label">থিম</p>
+    <div class="theme-grid">
+      <button class="theme-chip active" data-theme="emerald">
+        <span class="theme-swatch theme-swatch-emerald"></span> পান্না সবুজ
+      </button>
+      <button class="theme-chip" data-theme="midnight">
+        <span class="theme-swatch theme-swatch-midnight"></span> মিডনাইট
+      </button>
+      <button class="theme-chip" data-theme="sepia">
+        <span class="theme-swatch theme-swatch-sepia"></span> সেপিয়া
+      </button>
+    </div>
+
+  </div>
+
+<script src="data.js"></script>
+<script src="script.js"></script>
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/sw.js').catch(() => {
+        // offline support unavailable; app still works online
+      });
+    });
+  }
+</script>
+</body>
+</html>
