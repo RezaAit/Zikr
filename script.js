@@ -90,6 +90,9 @@
   const statsSheet = document.getElementById('statsSheet');
   const settingsSheet = document.getElementById('settingsSheet');
   const pickerSheet = document.getElementById('pickerSheet');
+  const contactSheet = document.getElementById('contactSheet');
+  const openContactBtn = document.getElementById('openContactBtn');
+  const footerContactBtn = document.getElementById('footerContactBtn');
   const historyList = document.getElementById('historyList');
   const clearHistoryBtn = document.getElementById('clearHistoryBtn');
 
@@ -648,11 +651,14 @@
     statsSheet.classList.remove('show');
     settingsSheet.classList.remove('show');
     pickerSheet.classList.remove('show');
+    contactSheet.classList.remove('show');
   }
 
   historyBtn.addEventListener('click', () => { renderHistory(); openSheet(historySheet); });
   statsBtn.addEventListener('click', () => { renderStats(); openSheet(statsSheet); });
   settingsBtn.addEventListener('click', () => openSheet(settingsSheet));
+  openContactBtn.addEventListener('click', () => openSheet(contactSheet));
+  footerContactBtn.addEventListener('click', () => openSheet(contactSheet));
   sheetBackdrop.addEventListener('click', closeSheets);
 
   // ---------- History rendering ----------
