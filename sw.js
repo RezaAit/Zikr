@@ -1,7 +1,7 @@
 // তাজবীহ কাউন্টার — Service Worker
 // Cache-first strategy for app shell, network-first fallback for navigation.
 
-const CACHE_VERSION = 'tajbih-v1';
+const CACHE_VERSION = 'tajbih-v2';
 const CACHE_NAME = `tajbih-cache-${CACHE_VERSION}`;
 
 const APP_SHELL = [
@@ -10,9 +10,10 @@ const APP_SHELL = [
   '/style.css',
   '/script.js',
   '/data.js',
+  '/i18n.js',
   '/manifest.json',
-  '/icons/android-chrome-192.png',
-  '/icons/android-chrome-512.png',
+  '/icons/icon-192.png',
+  '/icons/icon-512.png',
   '/icons/icon-maskable-192.png',
   '/icons/icon-maskable-512.png',
   '/icons/apple-touch-icon.png',

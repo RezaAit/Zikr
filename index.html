@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<title>তাজবীহ কাউন্টার</title>
-<meta name="description" content="ডিজিটাল তাজবীহ কাউন্টার — যিকির গণনা, স্ট্রিক, পরিসংখ্যান ও ৫০+ প্রিসেট যিকির।">
+<title>তাসবীহ কাউন্টার</title>
+<meta name="description" content="ডিজিটাল তাসবীহ কাউন্টার — যিকির গণনা, স্ট্রিক, পরিসংখ্যান ও ৫০+ প্রিসেট যিকির।">
 
 <!-- PWA -->
 <link rel="manifest" href="manifest.json">
@@ -12,11 +12,11 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="তাজবীহ">
+<meta name="apple-mobile-web-app-title" content="তাসবীহ">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-<link rel="icon" type="image/png" sizes="32x32" href="icons/android-chrome-32.png">
-<link rel="icon" type="image/png" sizes="192x192" href="icons/android-chrome-192.png">
-<link rel="icon" type="image/png" sizes="512x512" href="icons/android-chrome-512.png">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="icons/icon-512.png">
 
 <link rel="stylesheet" href="style.css">
 </head>
@@ -28,8 +28,14 @@
       <button class="icon-btn" id="historyBtn" aria-label="ইতিহাস">
         <svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></svg>
       </button>
-      <h1>তাজবীহ কাউন্টার</h1>
+      <h1>তাসবীহ কাউন্টার</h1>
       <div class="topbar-right">
+        <button class="icon-btn dua-topbar-btn" id="duaModalBtn" aria-label="নামাজ পরবর্তী দোয়া" title="নামাজ পরবর্তী দোয়া">
+          <svg viewBox="0 0 24 24"><path d="M12 2a7 7 0 0 1 7 7c0 4-3 6-4 9H9c-1-3-4-5-4-9a7 7 0 0 1 7-7Z"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>
+        </button>
+        <button class="icon-btn dua-topbar-btn" id="rabbanaModalBtn" aria-label="রব্বানা দোয়া" title="কুরআনের রব্বানা দোয়া">
+          <svg viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+        </button>
         <button class="icon-btn" id="statsBtn" aria-label="পরিসংখ্যান">
           <svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 16v-5"/><path d="M12 16V8"/><path d="M17 16v-3"/></svg>
         </button>
@@ -59,6 +65,12 @@
         <button class="dhikr-chip custom" data-name="" data-target="0" id="pickerChip">+ আরও যিকির</button>
       </div>
 
+      <!-- Mode toggle -->
+      <div class="mode-toggle">
+        <button class="mode-btn active" id="modeSingle" data-i18n="mode_single">এক এক করে</button>
+        <button class="mode-btn" id="modeBatch" data-i18n="mode_batch">আঙুলে গুনে যোগ</button>
+      </div>
+
       <div class="ring-wrap">
         <svg class="progress-ring" viewBox="0 0 240 240">
           <circle class="ring-track" cx="120" cy="120" r="108"></circle>
@@ -73,6 +85,15 @@
         </button>
 
         <div class="celebrate-burst" id="celebrateBurst"></div>
+      </div>
+
+      <!-- Batch mode panel -->
+      <div class="batch-panel" id="batchPanel" style="display:none;">
+        <p class="batch-hint">
+          <span data-i18n="batch_hint">প্রতি ট্যাপে যোগ হবে:</span>
+          <span class="batch-size-badge" id="batchSizeBadge">২০</span>
+          <span class="batch-hint-change" id="batchHintChange" data-i18n="batch_change_in_settings">(Settings থেকে পরিবর্তন করুন)</span>
+        </p>
       </div>
 
       <p class="active-dhikr" id="activeDhikrName">সুবহানাল্লাহ</p>
@@ -239,27 +260,43 @@
     </div>
 
     <div class="form-row daily-goal-row">
-      <label class="form-label" for="dailyGoalInput">দৈনিক লক্ষ্য</label>
+      <label class="form-label" for="dailyGoalInput" data-i18n="daily_goal_label">দৈনিক লক্ষ্য</label>
       <input type="number" id="dailyGoalInput" class="text-input" value="100" min="1" max="99999">
-      <p class="setting-sub">প্রতিদিন এই সংখ্যক জিকির পূর্ণ করলে স্ট্রিক বাড়বে</p>
+      <p class="setting-sub" data-i18n="daily_goal_sub">প্রতিদিন এই সংখ্যক জিকির পূর্ণ করলে স্ট্রিক বাড়বে</p>
     </div>
 
-    <p class="form-label">থিম</p>
+    <div class="form-row daily-goal-row">
+      <label class="form-label" for="batchDefaultInput" data-i18n="batch_default_label">ব্যাচ গণনার ডিফল্ট সাইজ</label>
+      <input type="number" id="batchDefaultInput" class="text-input" value="20" min="1" max="999">
+      <p class="setting-sub" data-i18n="batch_default_sub">আঙুলে গুনে যোগ করার সময় ডিফল্ট কত থেকে শুরু হবে (ডিফল্ট: ২০)</p>
+    </div>
+
+    <p class="form-label" data-i18n="language_label">ভাষা / Language</p>
+    <div class="theme-grid">
+      <button class="theme-chip lang-chip active" data-lang="bn">
+        <span class="lang-flag">বা</span> বাংলা
+      </button>
+      <button class="theme-chip lang-chip" data-lang="en">
+        <span class="lang-flag">EN</span> English
+      </button>
+    </div>
+
+    <p class="form-label" data-i18n="theme_label">থিম</p>
     <div class="theme-grid">
       <button class="theme-chip active" data-theme="emerald">
-        <span class="theme-swatch theme-swatch-emerald"></span> পান্না সবুজ
+        <span class="theme-swatch theme-swatch-emerald"></span> <span data-i18n="theme_emerald">পান্না সবুজ</span>
       </button>
       <button class="theme-chip" data-theme="midnight">
-        <span class="theme-swatch theme-swatch-midnight"></span> মিডনাইট
+        <span class="theme-swatch theme-swatch-midnight"></span> <span data-i18n="theme_midnight">মিডনাইট</span>
       </button>
       <button class="theme-chip" data-theme="sepia">
-        <span class="theme-swatch theme-swatch-sepia"></span> সেপিয়া
+        <span class="theme-swatch theme-swatch-sepia"></span> <span data-i18n="theme_sepia">সেপিয়া</span>
       </button>
     </div>
 
     <button class="text-btn contact-link" id="openContactBtn">
       <svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z" opacity="0"/><path d="M3 7l9 6 9-6"/><rect x="3" y="5" width="18" height="14" rx="2"/></svg>
-      যোগাযোগ ও মতামত
+      <span data-i18n="contact_link">যোগাযোগ ও মতামত</span>
     </button>
 
   </div>
@@ -308,6 +345,44 @@
     <p class="contact-dua">আপনার দোয়ায় স্মরণ রাখবেন। 🤲</p>
   </div>
 
+<!-- ══════════════ নামাজ পরবর্তী মাসনূন দোয়া Modal ══════════════ -->
+<div class="dua-modal-overlay" id="duaModalOverlay">
+  <div class="dua-modal" id="duaModal">
+    <div class="dua-modal-header">
+      <div>
+        <h2 class="dua-modal-title">নামাজ পরবর্তী মাসনূন দোয়া</h2>
+        <p class="dua-modal-subtitle">সহীহ হাদীস থেকে সংকলিত</p>
+      </div>
+      <button class="dua-modal-close" id="duaModalClose" aria-label="বন্ধ করুন">
+        <svg viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+      </button>
+    </div>
+
+    <div class="dua-modal-body" id="duaModalBody">
+      <!-- dynamically generated by script.js -->
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ রব্বানা দোয়া Modal ══════════════ -->
+<div class="dua-modal-overlay" id="rabbanaModalOverlay">
+  <div class="dua-modal" id="rabbanaModal">
+    <div class="dua-modal-header">
+      <div>
+        <h2 class="dua-modal-title">কুরআনের রব্বানা দোয়া</h2>
+        <p class="dua-modal-subtitle">Quranic Rabbana Du'as — আল-কুরআন থেকে সংকলিত</p>
+      </div>
+      <button class="dua-modal-close" id="rabbanaModalClose" aria-label="বন্ধ করুন">
+        <svg viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+      </button>
+    </div>
+    <div class="dua-modal-body" id="rabbanaModalBody">
+      <!-- dynamically generated -->
+    </div>
+  </div>
+</div>
+
+<script src="i18n.js"></script>
 <script src="data.js"></script>
 <script src="script.js"></script>
 <script>
