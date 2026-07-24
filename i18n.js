@@ -1,6 +1,6 @@
 window.I18N = {
   bn: {
-    app_title: 'তাসবীহ কাউন্টার',
+    app_title: 'তাসবীহ',
     aria_history: 'ইতিহাস', aria_stats: 'পরিসংখ্যান', aria_settings: 'সেটিংস',
     aria_tap: 'গণনা করুন', aria_undo: 'পূর্বের গণনা বাতিল', aria_reset: 'রিসেট', aria_vibrate: 'কম্পন চালু/বন্ধ',
     chip_more: '+ আরও যিকির',
@@ -40,7 +40,7 @@ window.I18N = {
     milestone_pct: (n) => `${n}% সম্পন্ন`, milestone_complete: 'সম্পূর্ণ হয়েছে! 🎉'
   },
   en: {
-    app_title: 'Tasbeeh Counter',
+    app_title: 'Tasbeeh',
     aria_history: 'History', aria_stats: 'Statistics', aria_settings: 'Settings',
     aria_tap: 'Tap to count', aria_undo: 'Undo last count', aria_reset: 'Reset', aria_vibrate: 'Toggle vibration',
     chip_more: '+ More Dhikr',

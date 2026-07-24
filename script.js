@@ -51,7 +51,7 @@
   }
 
   // ---------- State ----------
-  const STORAGE_KEY = 'tajbih_counter_state_v3';
+  const STORAGE_KEY = 'tajbih_counter_state_v4';
 
   let state = {
     count: 0,
@@ -103,6 +103,13 @@
         }
       }
     }catch(e){ /* ignore corrupt storage */ }
+
+    // Sanitize batchDefaultSize — must be 1–999, default 20
+    if(!state.batchDefaultSize || state.batchDefaultSize < 1 || state.batchDefaultSize > 999){
+      state.batchDefaultSize = 20;
+    }
+    // Clamp to integer
+    state.batchDefaultSize = Math.round(state.batchDefaultSize);
   }
 
   function save(){
@@ -114,6 +121,43 @@
   const countDisplay = document.getElementById('countDisplay');
   const roundLabel = document.getElementById('roundLabel');
   const targetLabel = document.getElementById('targetLabel');
+  const targetInput = document.getElementById('targetInput');
+  const targetLabelWrap = document.getElementById('targetLabelWrap');
+
+  // Inline target edit
+  targetLabel.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if(state.isFree) return;
+    targetLabel.classList.add('editing');
+    targetLabel.style.display = 'none';
+    targetInput.value = state.target;
+    targetInput.classList.add('show');
+    targetInput.focus();
+    targetInput.select();
+  });
+
+  function commitTargetEdit(){
+    let val = parseInt(targetInput.value, 10);
+    if(isNaN(val) || val < 1) val = state.target;
+    if(val > 9999) val = 9999;
+    state.target = val;
+    // NOTE: batchDefaultSize is NEVER changed by target edit
+    targetInput.classList.remove('show');
+    targetLabel.classList.remove('editing');
+    targetLabel.style.display = '';
+    save();
+    render();
+  }
+
+  targetInput.addEventListener('blur', commitTargetEdit);
+  targetInput.addEventListener('keydown', (e) => {
+    e.stopPropagation();
+    if(e.key === 'Enter') targetInput.blur();
+    if(e.key === 'Escape'){ targetInput.value = state.target; targetInput.blur(); }
+  });
+  // prevent tap-zone from firing when editing target
+  targetInput.addEventListener('click', (e) => e.stopPropagation());
+  targetLabelWrap.addEventListener('click', (e) => e.stopPropagation());
   const activeDhikrName = document.getElementById('activeDhikrName');
   const ringFill = document.getElementById('ringFill');
   const milestoneDotsSvg = document.getElementById('milestoneDots');
@@ -436,25 +480,40 @@
   // Rendering
   // ============================================================
   function render(){
-    // In batch mode, show cumulative total (completed rounds × target + current count)
-    let displayCount = state.count;
-    if(state.countingMode === 'batch' && !state.isFree && state.target > 0){
-      displayCount = (state.round - 1) * state.target + state.count;
-    }
-    countDisplay.textContent = numFmt(displayCount);
+    // Batch mode: count accumulates, so display directly
+    countDisplay.textContent = numFmt(state.count);
     roundLabel.textContent = state.isFree ? t('free_count_label') : tf('round_label', numFmt(state.round));
-    targetLabel.textContent = (!state.isFree && state.target > 0) ? tf('target_value_label', numFmt(state.target)) : t('no_target_label');
-    activeDhikrName.textContent = state.lang === 'en' && state.dhikrNameEn ? state.dhikrNameEn : state.dhikrName;
-    todayTotalEl.textContent = numFmt(state.todayTotal);
-    grandTotalEl.textContent = numFmt(state.grandTotal);
 
-    let progress = (!state.isFree && state.target > 0) ? Math.min(state.count / state.target, 1) : 0;
-    const offset = RING_CIRC * (1 - progress);
-    ringFill.style.strokeDasharray = RING_CIRC;
-    ringFill.style.strokeDashoffset = offset;
-    ringFill.style.opacity = state.isFree ? 0.25 : 1;
-    milestoneDotsSvg.style.opacity = state.isFree ? 0 : 1;
-    updateMilestoneDots(progress * 100);
+    const isBatch = state.countingMode === 'batch';
+    if(isBatch){
+      // In batch mode target label shows batch size info, not editable
+      targetLabel.textContent = (state.lang === 'en')
+        ? `Per tap: ${state.batchDefaultSize}`
+        : `প্রতি ট্যাপ: ${numFmt(state.batchDefaultSize)}`;
+      targetLabel.style.cursor = 'default';
+      // ring shows progress within current batch cycle (count mod batchDefaultSize)
+      const cycleProgress = state.batchDefaultSize > 0
+        ? (state.count % state.batchDefaultSize) / state.batchDefaultSize
+        : 0;
+      const offset = RING_CIRC * (1 - cycleProgress);
+      ringFill.style.strokeDasharray = RING_CIRC;
+      ringFill.style.strokeDashoffset = offset;
+      ringFill.style.opacity = 1;
+      milestoneDotsSvg.style.opacity = 0;
+    } else {
+      const tgtText = (!state.isFree && state.target > 0)
+        ? tf('target_value_label', numFmt(state.target))
+        : t('no_target_label');
+      targetLabel.textContent = tgtText + (!state.isFree && state.target > 0 ? ' ✎' : '');
+      targetLabel.style.cursor = (!state.isFree && state.target > 0) ? 'pointer' : 'default';
+      let progress = (!state.isFree && state.target > 0) ? Math.min(state.count / state.target, 1) : 0;
+      const offset = RING_CIRC * (1 - progress);
+      ringFill.style.strokeDasharray = RING_CIRC;
+      ringFill.style.strokeDashoffset = offset;
+      ringFill.style.opacity = state.isFree ? 0.25 : 1;
+      milestoneDotsSvg.style.opacity = state.isFree ? 0 : 1;
+      updateMilestoneDots(progress * 100);
+    }
 
     vibrateBtn.classList.toggle('active-state', state.vibrate);
 
@@ -610,6 +669,8 @@
     const amount = state.batchDefaultSize;
     if(amount <= 0) return;
     pushUndo();
+
+    // Accumulate count (never reset in batch mode — user sees running total)
     state.count += amount;
     state.todayTotal += amount;
     state.grandTotal += amount;
@@ -617,46 +678,31 @@
     doVibrate([15, 30, 15]);
     doSound();
 
-    let duaCompleted = false;
-
-    // handle round completion(s)
-    while(!state.isFree && state.autoRound && state.target > 0 && state.count >= state.target){
+    // In batch mode every tap = 1 round (round tracks hand-counted cycles)
+    if(!state.isFree){
       logCompletedRound();
       state.round++;
-      state.count -= state.target;
       state.milestonesHitThisSession = [];
-      duaCompleted = true;
     }
 
-    if(!duaCompleted) checkMilestone();
-    doVibrate([20, 40, 20]);
-
-    // Dua mode: on completion advance to next dua
-    if(duaCompleted && state.isDuaMode){
+    // Dua mode: advance after each batch tap
+    if(state.isDuaMode){
       const currentDua = DUA_LIST[state.duaIndex];
       const isFinalDua = state.duaIndex >= DUA_LIST.length - 1;
-      const nextIndex = state.duaIndex + 1;
-
-      // toast for completion
       const duaName = currentDua ? currentDua.num + ' নং দোয়া' : 'দোয়া';
       showToast(state.lang === 'en'
         ? `✓ Dua ${(state.duaIndex+1)} complete!`
         : `✓ ${duaName} সম্পন্ন!`
       );
       doVibrate([30, 60, 30, 60, 30]);
-
       if(isFinalDua){
-        // all duas done
         state.isDuaMode = false;
         state.duaIndex = -1;
         setTimeout(() => showToast(state.lang === 'en'
           ? '🎉 All duas complete! Alhamdulillah'
           : '🎉 সব দোয়া সম্পন্ন! আলহামদুলিল্লাহ'), 1800);
       } else {
-        // auto-advance to next dua after short delay
-        setTimeout(() => {
-          startDua(nextIndex);
-        }, 1500);
+        setTimeout(() => startDua(state.duaIndex + 1), 1500);
       }
     }
 
@@ -935,8 +981,8 @@
     state.isDuaMode = true;
     state.duaIndex = index;
     state.countingMode = 'batch';
-    state.batchDefaultSize = d.target > 0 ? d.target : 1;
-    selectDhikr(d.bn, d.target, d.target === 0, d.bn, true); // keepDuaMode=true
+    // batchDefaultSize stays at 20 always — don't override with dua target
+    selectDhikr(d.bn, d.target, d.target === 0, d.bn, true);
     duaModalOverlay.classList.remove('open');
     applyMode();
     render();
