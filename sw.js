@@ -1,7 +1,5 @@
-// তাজবীহ কাউন্টার — Service Worker
-// Cache-first strategy for app shell, network-first fallback for navigation.
-
-const CACHE_VERSION = 'tajbih-v2';
+// তাসবীহ — Service Worker v3
+const CACHE_VERSION = 'tajbih-v3';
 const CACHE_NAME = `tajbih-cache-${CACHE_VERSION}`;
 
 const APP_SHELL = [
@@ -11,6 +9,7 @@ const APP_SHELL = [
   '/script.js',
   '/data.js',
   '/i18n.js',
+  '/prayer.js',
   '/manifest.json',
   '/icons/icon-192.png',
   '/icons/icon-512.png',
@@ -42,23 +41,17 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('fetch', (event) => {
   const { request } = event;
+  if(request.method !== 'GET') return;
 
-  // Only handle GET requests; let everything else (e.g. POST) pass through.
-  if (request.method !== 'GET') return;
-
-  // Skip cross-origin requests (e.g. Google Fonts) — let the browser handle them normally,
-  // falling back to whatever the network does without breaking the page on failure.
   const url = new URL(request.url);
-  if (url.origin !== self.location.origin) {
+  if(url.origin !== self.location.origin){
     event.respondWith(
       fetch(request).catch(() => caches.match(request))
     );
     return;
   }
 
-  // Navigation requests: try network first so updates are picked up quickly,
-  // fall back to cached shell if offline.
-  if (request.mode === 'navigate') {
+  if(request.mode === 'navigate'){
     event.respondWith(
       fetch(request)
         .then((response) => {
@@ -71,17 +64,43 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Static assets: cache-first, then network, then cache the fresh copy.
   event.respondWith(
     caches.match(request).then((cached) => {
-      if (cached) return cached;
+      if(cached) return cached;
       return fetch(request).then((response) => {
-        if (response && response.status === 200) {
+        if(response && response.status === 200){
           const copy = response.clone();
           caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
         }
         return response;
       }).catch(() => cached);
+    })
+  );
+});
+
+// Handle push notifications from background
+self.addEventListener('push', (event) => {
+  const data = event.data ? event.data.json() : {};
+  event.waitUntil(
+    self.registration.showNotification(data.title || 'তাসবীহ', {
+      body: data.body || '',
+      icon: '/icons/icon-192.png',
+      badge: '/icons/icon-192.png',
+      tag: data.tag || 'prayer',
+      renotify: true,
+    })
+  );
+});
+
+// Notification click → open the app
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+      if(clientList.length > 0){
+        return clientList[0].focus();
+      }
+      return clients.openWindow('/');
     })
   );
 });

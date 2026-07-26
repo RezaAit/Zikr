@@ -28,7 +28,18 @@
       <button class="icon-btn" id="historyBtn" aria-label="ইতিহাস">
         <svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></svg>
       </button>
-      <h1>তাসবীহ</h1>
+      <h1 style="display:flex;align-items:center;gap:5px;">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" style="flex-shrink:0;">
+          <circle cx="12" cy="12" r="10" stroke="var(--gold)" stroke-width="1.5"/>
+          <circle cx="12" cy="5"  r="1.8" fill="var(--gold)"/>
+          <circle cx="18.5" cy="8.5" r="1.4" fill="var(--gold-soft)"/>
+          <circle cx="18.5" cy="15.5" r="1.4" fill="var(--gold-soft)"/>
+          <circle cx="12" cy="19" r="1.8" fill="var(--gold)"/>
+          <circle cx="5.5" cy="15.5" r="1.4" fill="var(--gold-soft)"/>
+          <circle cx="5.5" cy="8.5"  r="1.4" fill="var(--gold-soft)"/>
+        </svg>
+        তাসবীহ
+      </h1>
       <div class="topbar-right">
         <button class="icon-btn dua-topbar-btn" id="duaModalBtn" aria-label="নামাজ পরবর্তী দোয়া" title="নামাজ পরবর্তী দোয়া">
           <svg viewBox="0 0 24 24"><path d="M12 2a7 7 0 0 1 7 7c0 4-3 6-4 9H9c-1-3-4-5-4-9a7 7 0 0 1 7-7Z"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>
@@ -316,6 +327,57 @@
       <span data-i18n="contact_link">যোগাযোগ ও মতামত</span>
     </button>
 
+    <!-- Prayer Notification Settings -->
+    <div class="prayer-notif-section">
+      <div class="prayer-notif-header">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
+        <span data-i18n="prayer_notif_title">নামাজের রিমাইন্ডার</span>
+        <label class="switch" style="margin-left:auto">
+          <input type="checkbox" id="prayerNotifMaster">
+          <span class="slider"></span>
+        </label>
+      </div>
+      <p class="setting-sub" id="prayerNotifStatus" data-i18n="prayer_notif_sub">অনুমতি দিলে প্রতিদিন ৭টি নামাজের নোটিফিকেশন পাবেন।</p>
+
+      <div class="prayer-toggles" id="prayerToggles" style="display:none;">
+        <div class="prayer-toggle-row">
+          <span class="prayer-time-name">🌙 ফজর</span>
+          <span class="prayer-time-val" id="ptFajr">--:--</span>
+          <label class="switch switch-sm"><input type="checkbox" id="ptToggleFajr" checked><span class="slider"></span></label>
+        </div>
+        <div class="prayer-toggle-row">
+          <span class="prayer-time-name">☀️ যোহর</span>
+          <span class="prayer-time-val" id="ptDhuhr">--:--</span>
+          <label class="switch switch-sm"><input type="checkbox" id="ptToggleDhuhr" checked><span class="slider"></span></label>
+        </div>
+        <div class="prayer-toggle-row">
+          <span class="prayer-time-name">🌤️ আসর</span>
+          <span class="prayer-time-val" id="ptAsr">--:--</span>
+          <label class="switch switch-sm"><input type="checkbox" id="ptToggleAsr" checked><span class="slider"></span></label>
+        </div>
+        <div class="prayer-toggle-row">
+          <span class="prayer-time-name">🌆 মাগরিব</span>
+          <span class="prayer-time-val" id="ptMaghrib">--:--</span>
+          <label class="switch switch-sm"><input type="checkbox" id="ptToggleMaghrib" checked><span class="slider"></span></label>
+        </div>
+        <div class="prayer-toggle-row">
+          <span class="prayer-time-name">🌙 ইশা</span>
+          <span class="prayer-time-val" id="ptIsha">--:--</span>
+          <label class="switch switch-sm"><input type="checkbox" id="ptToggleIsha" checked><span class="slider"></span></label>
+        </div>
+        <div class="prayer-toggle-row">
+          <span class="prayer-time-name">😴 শোয়ার সময়</span>
+          <span class="prayer-time-val" id="ptBedtime">--:--</span>
+          <label class="switch switch-sm"><input type="checkbox" id="ptToggleBedtime" checked><span class="slider"></span></label>
+        </div>
+        <div class="prayer-toggle-row">
+          <span class="prayer-time-name">🤲 তাহাজ্জুদ</span>
+          <span class="prayer-time-val" id="ptTahajjud">--:--</span>
+          <label class="switch switch-sm"><input type="checkbox" id="ptToggleTahajjud" checked><span class="slider"></span></label>
+        </div>
+      </div>
+    </div>
+
   </div>
 
   <div class="sheet" id="contactSheet">
@@ -401,6 +463,7 @@
 
 <script src="i18n.js"></script>
 <script src="data.js"></script>
+<script src="prayer.js"></script>
 <script src="script.js"></script>
 <script>
   if ('serviceWorker' in navigator) {

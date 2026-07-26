@@ -90,8 +90,8 @@ body{
 
 .topbar h1{
   font-family: 'Noto Serif Bengali', serif;
-  font-size: 15px;
-  font-weight: 600;
+  font-size: 18px;
+  font-weight: 700;
   margin:0;
   color: var(--gold);
   letter-spacing: 0.01em;
@@ -1319,4 +1319,66 @@ body{
 .h-mode-badge.batch{
   background: rgba(201,162,75,0.15);
   color: var(--gold);
+}
+
+/* ══════════════ Prayer Notification Settings ══════════════ */
+.prayer-notif-section{
+  border-top: 1px solid var(--line);
+  padding-top: 14px;
+  margin-top: 10px;
+}
+.prayer-notif-header{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  margin-bottom:6px;
+  font-size:14.5px;
+  font-weight:600;
+  color: var(--text);
+}
+.prayer-notif-header svg{
+  stroke: var(--gold);
+  flex-shrink:0;
+}
+.prayer-toggles{
+  margin-top:10px;
+  display:flex;
+  flex-direction:column;
+  gap:2px;
+}
+.prayer-toggle-row{
+  display:flex;
+  align-items:center;
+  padding: 8px 4px;
+  border-bottom: 1px solid var(--line);
+  gap:8px;
+}
+.prayer-toggle-row:last-child{ border-bottom:none; }
+.prayer-time-name{
+  font-size:13.5px;
+  font-weight:500;
+  color: var(--text-dim);
+  flex:1;
+}
+.prayer-time-val{
+  font-size:13px;
+  font-weight:700;
+  color: var(--gold);
+  font-family:'Noto Serif Bengali', serif;
+  min-width:42px;
+  text-align:right;
+}
+.switch-sm{
+  width:38px;
+  height:22px;
+  flex-shrink:0;
+}
+.switch-sm .slider::before{
+  width:16px;
+  height:16px;
+  left:3px;
+  top:3px;
+}
+.switch-sm input:checked + .slider::before{
+  transform: translateX(16px);
 }

@@ -480,25 +480,32 @@
   // Rendering
   // ============================================================
   function render(){
-    // Batch mode: count accumulates, so display directly
-    countDisplay.textContent = numFmt(state.count);
-    roundLabel.textContent = state.isFree ? t('free_count_label') : tf('round_label', numFmt(state.round));
-
     const isBatch = state.countingMode === 'batch';
+
+    // Batch mode: count accumulates, round = completed cycles + 1
+    // count=0 → Round 1 | count=20 → Round 1 (done) | count=40 → Round 2 (done)
+    const batchRound = isBatch && state.batchDefaultSize > 0
+      ? Math.max(1, Math.ceil(state.count / state.batchDefaultSize))
+      : state.round;
+
+    countDisplay.textContent = numFmt(state.count);
+    roundLabel.textContent = state.isFree
+      ? t('free_count_label')
+      : tf('round_label', numFmt(isBatch ? batchRound : state.round));
+
     if(isBatch){
-      // In batch mode target label shows batch size info, not editable
       targetLabel.textContent = (state.lang === 'en')
         ? `Per tap: ${state.batchDefaultSize}`
         : `প্রতি ট্যাপ: ${numFmt(state.batchDefaultSize)}`;
       targetLabel.style.cursor = 'default';
-      // ring shows progress within current batch cycle (count mod batchDefaultSize)
-      const cycleProgress = state.batchDefaultSize > 0
-        ? (state.count % state.batchDefaultSize) / state.batchDefaultSize
-        : 0;
+      // Ring: fully fills on each tap (count is always multiple of batchSize)
+      // Show full ring after each tap, empty at start
+      const tapsCount = state.batchDefaultSize > 0 ? Math.floor(state.count / state.batchDefaultSize) : 0;
+      const cycleProgress = tapsCount > 0 ? 1 : 0; // full after any tap, empty at start
       const offset = RING_CIRC * (1 - cycleProgress);
       ringFill.style.strokeDasharray = RING_CIRC;
       ringFill.style.strokeDashoffset = offset;
-      ringFill.style.opacity = 1;
+      ringFill.style.opacity = 0.6;
       milestoneDotsSvg.style.opacity = 0;
     } else {
       const tgtText = (!state.isFree && state.target > 0)
@@ -514,6 +521,12 @@
       milestoneDotsSvg.style.opacity = state.isFree ? 0 : 1;
       updateMilestoneDots(progress * 100);
     }
+
+    activeDhikrName.textContent = state.lang === 'en' && state.dhikrNameEn
+      ? state.dhikrNameEn
+      : state.dhikrName;
+    todayTotalEl.textContent = numFmt(state.todayTotal);
+    grandTotalEl.textContent = numFmt(state.grandTotal);
 
     vibrateBtn.classList.toggle('active-state', state.vibrate);
 
@@ -670,7 +683,7 @@
     if(amount <= 0) return;
     pushUndo();
 
-    // Accumulate count (never reset in batch mode — user sees running total)
+    // Accumulate count — never reset
     state.count += amount;
     state.todayTotal += amount;
     state.grandTotal += amount;
@@ -678,10 +691,9 @@
     doVibrate([15, 30, 15]);
     doSound();
 
-    // In batch mode every tap = 1 round (round tracks hand-counted cycles)
+    // Log to history each tap
     if(!state.isFree){
       logCompletedRound();
-      state.round++;
       state.milestonesHitThisSession = [];
     }
 
@@ -1347,6 +1359,161 @@
   });
 
   // ============================================================
+  // Prayer Notification Settings
+  // ============================================================
+  const prayerNotifMaster = document.getElementById('prayerNotifMaster');
+  const prayerToggles     = document.getElementById('prayerToggles');
+  const prayerNotifStatus = document.getElementById('prayerNotifStatus');
+
+  const ptDisplays = {
+    fajr:     document.getElementById('ptFajr'),
+    dhuhr:    document.getElementById('ptDhuhr'),
+    asr:      document.getElementById('ptAsr'),
+    maghrib:  document.getElementById('ptMaghrib'),
+    isha:     document.getElementById('ptIsha'),
+    bedtime:  document.getElementById('ptBedtime'),
+    tahajjud: document.getElementById('ptTahajjud'),
+  };
+  const ptToggles = {
+    fajr:     document.getElementById('ptToggleFajr'),
+    dhuhr:    document.getElementById('ptToggleDhuhr'),
+    asr:      document.getElementById('ptToggleAsr'),
+    maghrib:  document.getElementById('ptToggleMaghrib'),
+    isha:     document.getElementById('ptToggleIsha'),
+    bedtime:  document.getElementById('ptToggleBedtime'),
+    tahajjud: document.getElementById('ptToggleTahajjud'),
+  };
+
+  function padT(d){
+    return d.getHours().toString().padStart(2,'0') + ':' + d.getMinutes().toString().padStart(2,'0');
+  }
+
+  function getPrayerEnabled(){
+    const ns = window.PrayerNotif ? window.PrayerNotif.loadNotifState() : {};
+    return ns.enabled || {
+      fajr:true, dhuhr:true, asr:true, maghrib:true,
+      isha:true, bedtime:true, tahajjud:true
+    };
+  }
+
+  function savePrayerEnabled(enabled){
+    if(!window.PrayerNotif) return;
+    const ns = window.PrayerNotif.loadNotifState();
+    ns.enabled = enabled;
+    window.PrayerNotif.saveNotifState(ns);
+  }
+
+  function updatePrayerTimesDisplay(times){
+    if(!times) return;
+    const today = new Date();
+    const tomorrow = new Date(today); tomorrow.setDate(today.getDate() + 1);
+    let tomorrowTimes;
+    try{
+      const ns = window.PrayerNotif.loadNotifState();
+      tomorrowTimes = window.PrayerNotif.calcPrayerTimes(tomorrow, ns.lat, ns.lng);
+    }catch(e){ tomorrowTimes = null; }
+
+    const tahajjud = tomorrowTimes
+      ? window.PrayerNotif.calcTahajjud(times.isha, tomorrowTimes.fajr)
+      : null;
+    const bedtime = tahajjud ? window.PrayerNotif.calcBedtime(tahajjud) : null;
+
+    if(ptDisplays.fajr)     ptDisplays.fajr.textContent     = padT(times.fajr);
+    if(ptDisplays.dhuhr)    ptDisplays.dhuhr.textContent    = padT(times.dhuhr);
+    if(ptDisplays.asr)      ptDisplays.asr.textContent      = padT(times.asr);
+    if(ptDisplays.maghrib)  ptDisplays.maghrib.textContent  = padT(times.maghrib);
+    if(ptDisplays.isha)     ptDisplays.isha.textContent     = padT(times.isha);
+    if(ptDisplays.bedtime && bedtime)   ptDisplays.bedtime.textContent   = padT(bedtime);
+    if(ptDisplays.tahajjud && tahajjud) ptDisplays.tahajjud.textContent  = padT(tahajjud);
+  }
+
+  function syncPrayerToggleUI(){
+    const enabled = getPrayerEnabled();
+    Object.keys(ptToggles).forEach(k => {
+      if(ptToggles[k]) ptToggles[k].checked = enabled[k] !== false;
+    });
+  }
+
+  async function activatePrayerNotif(){
+    if(!window.PrayerNotif){
+      prayerNotifStatus.textContent = state.lang === 'en'
+        ? 'Prayer module not loaded.' : 'প্রেয়ার মডিউল লোড হয়নি।';
+      return;
+    }
+    prayerNotifStatus.textContent = state.lang === 'en'
+      ? '⏳ Getting location…' : '⏳ লোকেশন নিচ্ছে…';
+
+    const enabled = getPrayerEnabled();
+    const result  = await window.PrayerNotif.setup(state.lang, enabled);
+
+    if(result.error === 'permission_denied'){
+      prayerNotifStatus.textContent = state.lang === 'en'
+        ? '❌ Notification permission denied. Enable in browser settings.'
+        : '❌ নোটিফিকেশনের অনুমতি দেওয়া হয়নি। ব্রাউজার সেটিংস থেকে চালু করুন।';
+      prayerNotifMaster.checked = false;
+      const ns = window.PrayerNotif.loadNotifState();
+      ns.masterEnabled = false;
+      window.PrayerNotif.saveNotifState(ns);
+      return;
+    }
+    if(result.error){
+      prayerNotifStatus.textContent = state.lang === 'en'
+        ? `❌ Error: ${result.error}` : `❌ সমস্যা: ${result.error}`;
+      return;
+    }
+
+    prayerToggles.style.display = '';
+    prayerNotifStatus.textContent = state.lang === 'en'
+      ? `✓ Notifications active. Location: (${result.lat.toFixed(2)}, ${result.lng.toFixed(2)})`
+      : `✓ নোটিফিকেশন চালু। অবস্থান: (${result.lat.toFixed(2)}, ${result.lng.toFixed(2)})`;
+
+    updatePrayerTimesDisplay(result.times);
+    syncPrayerToggleUI();
+
+    const ns = window.PrayerNotif.loadNotifState();
+    ns.masterEnabled = true;
+    window.PrayerNotif.saveNotifState(ns);
+  }
+
+  function deactivatePrayerNotif(){
+    if(window.PrayerNotif) window.PrayerNotif.clearScheduled();
+    prayerToggles.style.display = 'none';
+    prayerNotifStatus.textContent = state.lang === 'en'
+      ? 'Enable to receive daily prayer reminders.'
+      : 'চালু করলে প্রতিদিন ৭টি নামাজের রিমাইন্ডার পাবেন।';
+    if(window.PrayerNotif){
+      const ns = window.PrayerNotif.loadNotifState();
+      ns.masterEnabled = false;
+      window.PrayerNotif.saveNotifState(ns);
+    }
+  }
+
+  prayerNotifMaster.addEventListener('change', () => {
+    if(prayerNotifMaster.checked){
+      activatePrayerNotif();
+    } else {
+      deactivatePrayerNotif();
+    }
+  });
+
+  // Individual prayer toggle changes
+  Object.keys(ptToggles).forEach(key => {
+    if(!ptToggles[key]) return;
+    ptToggles[key].addEventListener('change', () => {
+      const enabled = getPrayerEnabled();
+      enabled[key] = ptToggles[key].checked;
+      savePrayerEnabled(enabled);
+      // Reschedule with new settings
+      if(window.PrayerNotif && prayerNotifMaster.checked){
+        const ns = window.PrayerNotif.loadNotifState();
+        if(ns.lat && ns.lng){
+          window.PrayerNotif.schedulePrayerNotifications(ns.lat, ns.lng, state.lang, enabled);
+        }
+      }
+    });
+  });
+
+  // ============================================================
   // Init
   // ============================================================
   function init(){
@@ -1365,8 +1532,23 @@
     applyTheme();
     buildMilestoneDots();
     checkStreak();
-    applyMode();  // sets mode buttons + shows/hides batch panel
+    applyMode();
     render();
+
+    // Restore prayer notification state
+    if(window.PrayerNotif){
+      const ns = window.PrayerNotif.loadNotifState();
+      syncPrayerToggleUI();
+      if(ns.masterEnabled && Notification.permission === 'granted'){
+        prayerNotifMaster.checked = true;
+        prayerToggles.style.display = '';
+        prayerNotifStatus.textContent = state.lang === 'en'
+          ? '⏳ Rescheduling notifications…' : '⏳ নোটিফিকেশন পুনরায় সেট হচ্ছে…';
+        activatePrayerNotif();
+      } else {
+        prayerNotifMaster.checked = false;
+      }
+    }
   }
 
   init();
