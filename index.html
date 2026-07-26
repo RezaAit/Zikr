@@ -461,6 +461,22 @@
   </div>
 </div>
 
+<!-- OneSignal Push Notifications -->
+<script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+<script>
+  window.OneSignalDeferred = window.OneSignalDeferred || [];
+  OneSignalDeferred.push(async function(OneSignal) {
+    await OneSignal.init({
+      appId: "29d3f5b2-2f30-429d-8707-11a368d15dc1",
+      serviceWorkerParam: { scope: "/" },
+      notifyButton: { enable: false }, // আমরা নিজস্ব UI ব্যবহার করব
+      allowLocalhostAsSecureOrigin: true,
+    });
+    window._oneSignalReady = true;
+    window.dispatchEvent(new Event('onesignal-ready'));
+  });
+</script>
+
 <script src="i18n.js"></script>
 <script src="data.js"></script>
 <script src="prayer.js"></script>

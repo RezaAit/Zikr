@@ -1,25 +1,16 @@
-// তাসবীহ — Service Worker v3
-const CACHE_VERSION = 'tajbih-v3';
+// তাসবীহ — Service Worker v5 (OneSignal compatible)
+const CACHE_VERSION = "tajbih-v5";
 const CACHE_NAME = `tajbih-cache-${CACHE_VERSION}`;
 
 const APP_SHELL = [
-  '/',
-  '/index.html',
-  '/style.css',
-  '/script.js',
-  '/data.js',
-  '/i18n.js',
-  '/prayer.js',
-  '/manifest.json',
-  '/icons/icon-192.png',
-  '/icons/icon-512.png',
-  '/icons/icon-maskable-192.png',
-  '/icons/icon-maskable-512.png',
-  '/icons/apple-touch-icon.png',
-  '/icons/favicon-32.png'
+  "/", "/index.html", "/style.css", "/script.js",
+  "/data.js", "/i18n.js", "/prayer.js", "/manifest.json",
+  "/icons/icon-192.png", "/icons/icon-512.png",
+  "/icons/icon-maskable-192.png", "/icons/icon-maskable-512.png",
+  "/icons/apple-touch-icon.png", "/icons/favicon-32.png"
 ];
 
-self.addEventListener('install', (event) => {
+self.addEventListener("install", (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then((cache) => cache.addAll(APP_SHELL))
@@ -27,39 +18,36 @@ self.addEventListener('install', (event) => {
   );
 });
 
-self.addEventListener('activate', (event) => {
+self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches.keys().then((keys) =>
       Promise.all(
-        keys
-          .filter((key) => key.startsWith('tajbih-cache-') && key !== CACHE_NAME)
-          .map((key) => caches.delete(key))
+        keys.filter((k) => k.startsWith("tajbih-cache-") && k !== CACHE_NAME)
+            .map((k) => caches.delete(k))
       )
     ).then(() => self.clients.claim())
   );
 });
 
-self.addEventListener('fetch', (event) => {
+self.addEventListener("fetch", (event) => {
   const { request } = event;
-  if(request.method !== 'GET') return;
+  if(request.method !== "GET") return;
+  if(request.url.includes("onesignal.com")) return;
 
   const url = new URL(request.url);
   if(url.origin !== self.location.origin){
-    event.respondWith(
-      fetch(request).catch(() => caches.match(request))
-    );
+    event.respondWith(fetch(request).catch(() => caches.match(request)));
     return;
   }
 
-  if(request.mode === 'navigate'){
+  if(request.mode === "navigate"){
     event.respondWith(
       fetch(request)
-        .then((response) => {
-          const copy = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put('/index.html', copy));
-          return response;
+        .then((r) => {
+          caches.open(CACHE_NAME).then((c) => c.put("/index.html", r.clone()));
+          return r;
         })
-        .catch(() => caches.match('/index.html'))
+        .catch(() => caches.match("/index.html"))
     );
     return;
   }
@@ -67,40 +55,49 @@ self.addEventListener('fetch', (event) => {
   event.respondWith(
     caches.match(request).then((cached) => {
       if(cached) return cached;
-      return fetch(request).then((response) => {
-        if(response && response.status === 200){
-          const copy = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
+      return fetch(request).then((r) => {
+        if(r && r.status === 200){
+          caches.open(CACHE_NAME).then((c) => c.put(request, r.clone()));
         }
-        return response;
+        return r;
       }).catch(() => cached);
     })
   );
 });
 
-// Handle push notifications from background
-self.addEventListener('push', (event) => {
-  const data = event.data ? event.data.json() : {};
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
   event.waitUntil(
-    self.registration.showNotification(data.title || 'তাসবীহ', {
-      body: data.body || '',
-      icon: '/icons/icon-192.png',
-      badge: '/icons/icon-192.png',
-      tag: data.tag || 'prayer',
-      renotify: true,
+    clients.matchAll({ type: "window", includeUncontrolled: true }).then((list) => {
+      for(const c of list){
+        if(c.url.includes(self.location.origin) && "focus" in c) return c.focus();
+      }
+      return clients.openWindow("/");
     })
   );
 });
 
-// Notification click → open the app
-self.addEventListener('notificationclick', (event) => {
-  event.notification.close();
-  event.waitUntil(
-    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
-      if(clientList.length > 0){
-        return clientList[0].focus();
-      }
-      return clients.openWindow('/');
-    })
-  );
+self.addEventListener("push", (event) => {
+  if(!event.data) return;
+  try{
+    const d = event.data.json();
+    event.waitUntil(
+      self.registration.showNotification(d.title || "তাসবীহ", {
+        body:     d.body || d.alert || "",
+        icon:     "/icons/icon-192.png",
+        badge:    "/icons/icon-192.png",
+        tag:      d.tag || "prayer",
+        renotify: true,
+        vibrate:  [200, 100, 200],
+        data:     { url: d.url || "/" }
+      })
+    );
+  }catch(e){
+    event.waitUntil(
+      self.registration.showNotification("তাসবীহ", {
+        body:  event.data.text(),
+        icon:  "/icons/icon-192.png",
+      })
+    );
+  }
 });

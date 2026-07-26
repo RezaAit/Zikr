@@ -300,24 +300,117 @@ function getLocation(){
 // ─────────────────────────────────────────────
 // Public API
 // ─────────────────────────────────────────────
+// OneSignal Integration
+// ─────────────────────────────────────────────
+
+/**
+ * Wait for OneSignal to be ready (loaded via CDN async)
+ */
+function waitForOneSignal(timeout = 8000){
+  return new Promise((resolve) => {
+    if(window._oneSignalReady && window.OneSignal){
+      resolve(true); return;
+    }
+    const timer = setTimeout(() => resolve(false), timeout);
+    window.addEventListener('onesignal-ready', () => {
+      clearTimeout(timer); resolve(true);
+    }, { once: true });
+  });
+}
+
+/**
+ * Request OneSignal permission — shows the native OS notification prompt.
+ * Returns true if subscribed.
+ */
+async function requestOneSignalPermission(){
+  try{
+    const ready = await waitForOneSignal();
+    if(!ready || !window.OneSignal) return false;
+    await window.OneSignal.Notifications.requestPermission();
+    const isSubscribed = await window.OneSignal.User.PushSubscription.optedIn;
+    return !!isSubscribed;
+  }catch(e){ return false; }
+}
+
+/**
+ * Schedule a OneSignal local notification at a specific time.
+ * OneSignal v16 supports local notifications via the Notifications API.
+ * For background delivery we use setTimeout + OneSignal.Notifications.addClickListener
+ * as fallback since REST API requires server-side.
+ * Primary method: native Notification API (works with OneSignal SW scope).
+ */
+function scheduleOneSignalNotification(title, body, time){
+  const now = Date.now();
+  const delay = time.getTime() - now;
+  if(delay < 0 || delay > 24 * 60 * 60 * 1000) return;
+
+  const tid = setTimeout(async () => {
+    try{
+      // Use OneSignal's service worker scope for the notification
+      // so it can show even when tab is in background
+      const reg = await navigator.serviceWorker.ready;
+      reg.showNotification(title, {
+        body,
+        icon: '/icons/icon-192.png',
+        badge: '/icons/icon-192.png',
+        tag: title,
+        renotify: true,
+        vibrate: [200, 100, 200],
+        data: { url: '/' }
+      });
+    }catch(e){
+      // Fallback to basic Notification API
+      if(Notification.permission === 'granted'){
+        new Notification(title, { body, icon: '/icons/icon-192.png' });
+      }
+    }
+  }, delay);
+  _scheduledTimers.push(tid);
+}
+
+// Override scheduleNotification with OneSignal-enhanced version
+function scheduleNotification(title, body, time){
+  const now = Date.now();
+  const delay = time.getTime() - now;
+  if(delay < 0 || delay > 24 * 60 * 60 * 1000) return;
+  // Use SW-backed notification for background support
+  scheduleOneSignalNotification(title, body, time);
+}
+
+// ─────────────────────────────────────────────
 window.PrayerNotif = {
   calcPrayerTimes,
   calcTahajjud,
   calcBedtime,
   schedulePrayerNotifications,
   requestPermission,
+  requestOneSignalPermission,
   getLocation,
   loadNotifState,
   saveNotifState,
   clearScheduled,
 
   /**
-   * Full setup: request permission → get location → schedule notifications.
-   * Call this once on app load and again after midnight.
+   * Full setup: request OneSignal permission → get location → schedule notifications.
+   * Uses OneSignal when available, falls back to native Notification API.
    */
   async setup(lang, enabled){
     try{
-      const granted = await requestPermission();
+      // Try OneSignal first (background notifications)
+      const osReady = await waitForOneSignal(3000);
+      let granted = false;
+
+      if(osReady && window.OneSignal){
+        granted = await requestOneSignalPermission();
+        if(!granted){
+          // Fallback to native
+          granted = await requestPermission();
+        }
+      } else {
+        // No OneSignal, use native
+        granted = await requestPermission();
+      }
+
       if(!granted) return { error: 'permission_denied' };
 
       const { lat, lng } = await getLocation();
@@ -327,9 +420,21 @@ window.PrayerNotif = {
       const now = new Date();
       const midnight = new Date(now);
       midnight.setDate(now.getDate() + 1);
-      midnight.setHours(0, 1, 0, 0); // 00:01 next day
+      midnight.setHours(0, 1, 0, 0);
       const msUntilMidnight = midnight.getTime() - now.getTime();
       setTimeout(() => window.PrayerNotif.setup(lang, enabled), msUntilMidnight);
+
+      // Save OneSignal player ID for reference
+      if(osReady && window.OneSignal){
+        try{
+          const playerId = window.OneSignal.User.PushSubscription.id;
+          if(playerId){
+            const ns = loadNotifState();
+            ns.osPlayerId = playerId;
+            saveNotifState(ns);
+          }
+        }catch(e){}
+      }
 
       return { success: true, times, lat, lng };
     }catch(err){
