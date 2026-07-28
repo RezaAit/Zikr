@@ -469,8 +469,8 @@
     await OneSignal.init({
       appId: "29d3f5b2-2f30-429d-8707-11a368d15dc1",
       serviceWorkerParam: { scope: "/" },
-      notifyButton: { enable: false }, // আমরা নিজস্ব UI ব্যবহার করব
-      allowLocalhostAsSecureOrigin: true,
+      notifyButton: { enable: false },
+      allowLocalhostAsSecureOrigin: true, // localhost testing-এর জন্য
     });
     window._oneSignalReady = true;
     window.dispatchEvent(new Event('onesignal-ready'));
@@ -484,9 +484,23 @@
 <script>
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('/sw.js').catch(() => {
-        // offline support unavailable; app still works online
-      });
+      navigator.serviceWorker.register('/sw.js', { scope: '/' })
+        .then((reg) => {
+          // Check for SW updates every hour
+          setInterval(() => reg.update(), 60 * 60 * 1000);
+          reg.addEventListener('updatefound', () => {
+            const newSW = reg.installing;
+            newSW.addEventListener('statechange', () => {
+              if(newSW.state === 'installed' && navigator.serviceWorker.controller){
+                // New version available — activate immediately
+                newSW.postMessage({ type: 'SKIP_WAITING' });
+              }
+            });
+          });
+        })
+        .catch(() => {
+          // offline support unavailable; app still works online
+        });
     });
   }
 </script>

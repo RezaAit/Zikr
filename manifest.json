@@ -1,9 +1,9 @@
 {
   "name": "তাসবীহ",
   "short_name": "তাসবীহ",
-  "description": "তাসবীহ — যিকির গণনা, স্ট্রিক, পরিসংখ্যান ও ৫০+ প্রিসেট যিকির।",
-  "start_url": "/",
-  "scope": "/",
+  "description": "ডিজিটাল তাসবীহ — যিকির গণনা, স্ট্রিক, পরিসংখ্যান ও ৫০+ প্রিসেট যিকির।",
+  "start_url": "https://tajbih.ait.net.bd/",
+  "scope": "https://tajbih.ait.net.bd/",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#0e1a16",
